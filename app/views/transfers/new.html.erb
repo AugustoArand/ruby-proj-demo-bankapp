@@ -1,0 +1,28 @@
+<form action="<%= transfers_path %>" method="post">
+  <div>
+    <label for="from_account">De:</label>
+    <select name="from_account" id="from_account" required>
+      <% @accounts.each do |account| %>
+        <option value="<%= account.id %>"><%= account.name %> - R$ <%= account.balance %></option>
+      <% end %>
+    </select>
+  </div>
+
+  <div>
+    <label for="to_account">Para:</label>
+    <select name="to_account" id="to_account" required>
+      <% @accounts.each do |account| %>
+        <option value="<%= account.id %>"><%= account.name %> - R$ <%= account.balance %></option>
+      <% end %>
+    </select>
+  </div>
+
+  <div>
+    <label for="amount">Valor:</label>
+    <input type="number" name="amount" id="amount" required min="0.01" step="0.01">
+  </div>
+
+  <div>
+    <button type="submit">Transferir</button>
+  </div>
+</form>

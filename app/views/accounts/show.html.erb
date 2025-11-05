@@ -1,0 +1,30 @@
+<h1>Detalhes da Conta</h1>
+
+<p><strong>Nome:</strong> <%= @account.user.name %></p>
+<p><strong>Email:</strong> <%= @account.user.email %></p>
+<p><strong>Saldo:</strong> <%= number_to_currency(@account.balance) %></p>
+
+<h2>Transferências Recentes</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Data</th>
+      <th>Valor</th>
+      <th>De</th>
+      <th>Para</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @account.transactions.each do |transaction| %>
+      <tr>
+        <td><%= transaction.created_at.strftime("%d/%m/%Y") %></td>
+        <td><%= number_to_currency(transaction.amount) %></td>
+        <td><%= transaction.from_account.user.name %></td>
+        <td><%= transaction.to_account.user.name %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<%= link_to 'Realizar Transferência', new_transfer_path(account_id: @account.id) %>
+<%= link_to 'Voltar', accounts_path %>

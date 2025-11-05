@@ -1,0 +1,38 @@
+<h1>Dashboard</h1>
+
+<p>Bem-vindo ao seu painel, <%= current_user.name %>!</p>
+
+<h2>Suas Contas</h2>
+<ul>
+  <% current_user.accounts.each do |account| %>
+    <li>
+      <strong>Conta ID:</strong> <%= account.id %> - 
+      <strong>Saldo:</strong> <%= number_to_currency(account.balance) %>
+      <%= link_to 'Ver Detalhes', account_path(account) %>
+    </li>
+  <% end %>
+</ul>
+
+<h2>Transações Recentes</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Data</th>
+      <th>Valor</th>
+      <th>Conta de Origem</th>
+      <th>Conta de Destino</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% current_user.transactions.order(created_at: :desc).limit(10).each do |transaction| %>
+      <tr>
+        <td><%= transaction.created_at.strftime("%d/%m/%Y %H:%M") %></td>
+        <td><%= number_to_currency(transaction.amount) %></td>
+        <td><%= transaction.source_account_id %></td>
+        <td><%= transaction.destination_account_id %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<p><%= link_to 'Realizar Transferência', new_transfer_path %></p>

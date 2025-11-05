@@ -1,0 +1,23 @@
+<form action="<%= user_session_path %>" method="post">
+  <div>
+    <%= label_tag :email %>
+    <%= email_field_tag :email, nil, required: true %>
+  </div>
+
+  <div>
+    <%= label_tag :password %>
+    <%= password_field_tag :password, nil, required: true %>
+  </div>
+
+  <div>
+    <%= submit_tag "Login" %>
+  </div>
+
+  <div>
+    <%= link_to "Esqueceu sua senha?", new_password_path %>
+  </div>
+
+  <div>
+    <%= link_to "Criar uma conta", new_user_registration_path %>
+  </div>
+</form>

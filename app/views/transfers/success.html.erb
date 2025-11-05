@@ -1,0 +1,13 @@
+<h1>Transferência bem-sucedida</h1>
+
+<p>A transferência foi realizada com sucesso!</p>
+
+<p>Detalhes da transferência:</p>
+<ul>
+  <li>Conta de origem: <%= @transaction.from_account.name %></li>
+  <li>Conta de destino: <%= @transaction.to_account.name %></li>
+  <li>Valor: <%= number_to_currency(@transaction.amount) %></li>
+  <li>Data: <%= @transaction.created_at.strftime("%d/%m/%Y %H:%M") %></li>
+</ul>
+
+<p><%= link_to 'Voltar para o painel', dashboard_path %></p>
