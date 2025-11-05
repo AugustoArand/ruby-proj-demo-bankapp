@@ -1,46 +1,62 @@
-# This workflow uses actions that are not certified by GitHub.  They are
-# provided by a third-party and are governed by separate terms of service,
-# privacy policy, and support documentation.
-#
-# This workflow will install a prebuilt Ruby version, install dependencies, and
-# run tests and linters.
-name: "Ruby on Rails CI"
+
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ main ]
+
 jobs:
   test:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:11-alpine
-        ports:
-          - "5432:5432"
-        env:
-          POSTGRES_DB: rails_test
-          POSTGRES_USER: rails
-          POSTGRES_PASSWORD: password
     env:
       RAILS_ENV: test
-      DATABASE_URL: "postgres://rails:password@localhost:5432/rails_test"
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      # Add or replace dependency steps here
-      - name: Install Ruby and gems
-        uses: ruby/setup-ruby@78c01b705fd9d5ad960d432d3a0cfa341d50e410 # v1.179.1
-        with:
-          ruby-version: "3.2.2"
-          bundler-cache: true
-      # Add or replace database setup steps here
-      - name: Set up database schema
-        run: bin/rails db:schema:load
-      # Add or replace test runners here
-      - name: Run tests
-        run: bin/rake
+      DATABASE_URL: postgres://postgres:password@127.0.0.1:5432/rails_test
 
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: "3.2.2"      # <- replace with your app's Ruby version (or add .ruby-version to repo)
+        bundler-cache: true        # caches gems between runs
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Pull and run postgres (with retries)
+      run: |
+        set -eux
+        for i in 1 2 3; do
+          if docker pull postgres:11-alpine; then
+            break
+          fi
+          echo "docker pull failed, retrying ($i)..."
+          sleep $((i * 6))
+        done
+        docker run --name test-postgres -e POSTGRES_PASSWORD=password -e POSTGRES_DB=rails_test -p 5432:5432 -d postgres:11-alpine
+        for i in {1..30}; do
+          docker exec test-postgres pg_isready -U postgres && break || sleep 1
+        done
+
+    - name: Install gems
+      run: |
+        set -eux
+        # bundler-cache: true above will have installed gems, but run explicit install to be explicit/robust
+        bundle install --jobs 4 --retry 3
+
+    - name: Load schema (use bundle exec so we don't rely on committed bin/rails)
+      run: |
+        set -eux
+        bundle exec rails db:schema:load
+
+    - name: Run tests
+      run: |
+        set -eux
+        bundle exec rspec
   lint:
     runs-on: ubuntu-latest
     steps:
