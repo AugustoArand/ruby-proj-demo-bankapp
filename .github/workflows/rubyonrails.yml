@@ -1,0 +1,77 @@
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      RAILS_ENV: test
+      DATABASE_URL: postgres://postgres:password@127.0.0.1:5432/rails_test
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: "3.2.2"      # <- replace with your app's Ruby version (or add .ruby-version to repo)
+        bundler-cache: true        # caches gems between runs
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ augustoarandiba@gmail.com }}
+        password: ${{ Pa@1junior }}
+
+    - name: Pull and run postgres (with retries)
+      run: |
+        set -eux
+        for i in 1 2 3; do
+          if docker pull postgres:11-alpine; then
+            break
+          fi
+          echo "docker pull failed, retrying ($i)..."
+          sleep $((i * 6))
+        done
+        docker run --name test-postgres -e POSTGRES_PASSWORD=password -e POSTGRES_DB=rails_test -p 5432:5432 -d postgres:11-alpine
+        for i in {1..30}; do
+          docker exec test-postgres pg_isready -U postgres && break || sleep 1
+        done
+
+    - name: Install gems
+      run: |
+        set -eux
+        # bundler-cache: true above will have installed gems, but run explicit install to be explicit/robust
+        bundle install --jobs 4 --retry 3
+
+    - name: Load schema (use bundle exec so we don't rely on committed bin/rails)
+      run: |
+        set -eux
+        bundle exec rails db:schema:load
+
+    - name: Run tests
+      run: |
+        set -eux
+        bundle exec rspec
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install Ruby and gems
+        uses: ruby/setup-ruby@78c01b705fd9d5ad960d432d3a0cfa341d50e410 # v1.179.1
+        with:
+          bundler-cache: true
+      - name: Generate binstubs
+        run: bundle binstubs bundler-audit brakeman rubocop
+      # Add or replace any other lints here
+      - name: Security audit dependencies
+        run: bin/bundler-audit --update
+      - name: Security audit application code
+        run: bin/brakeman -q -w2
+      - name: Lint Ruby files
+        run: bin/rubocop --parallel
