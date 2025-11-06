@@ -24,8 +24,8 @@ jobs:
     - name: Login to Docker Hub
       uses: docker/login-action@v2
       with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        username: ${{ augustoarandiba@gmail.com }}
+        password: ${{ Pa@1junior }}
 
     - name: Pull and run postgres (with retries)
       run: |
